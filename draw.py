@@ -1,3 +1,4 @@
+import random
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -14,6 +15,12 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 # Define an empty canvas
 canvas = None
+
+# Keyboard controls
+print("Keyboard Controls:")
+print("Press 'q' to quit")
+print("Press 's' to save the canvas")
+print("Press 'c' to clear the canvas")
 
 while True:
     # Read frame from video capture
@@ -59,10 +66,17 @@ while True:
     cv2.imshow("Output", frame)
     cv2.imshow("Canvas", canvas)
 
-    # Check for key press
+    # Keyboard controls and delay between getting next frame
     key = cv2.waitKey(1)
     if key == ord("q"):
+        print("Quitting")
         break
+    if key == ord("s"):
+        print("Canvas saved as output.png")
+        cv2.imwrite("output.png", canvas)
+    if key == ord("c"):
+        print("Canvas cleared")
+        canvas = None
 
 # Release video capture and destroy window
 cap.release()
