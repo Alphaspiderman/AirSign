@@ -1,7 +1,16 @@
-import random
+import os
+import time
+import warnings
+
+# Set the environment variable to suppress Tensorflow warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 import cv2
 import mediapipe as mp
 import numpy as np
+
+# Ignore warnings
+warnings.filterwarnings("ignore")
 
 # Initialize video capture
 cap = cv2.VideoCapture(0)
@@ -16,25 +25,32 @@ mp_drawing_styles = mp.solutions.drawing_styles
 # Define an empty canvas
 canvas = None
 
-# Keyboard controls
-print("Keyboard Controls:")
-print("Press 'q' to quit")
-print("Press 's' to save the canvas")
-print("Press 'c' to clear the canvas")
+# Control when to process the handtracking
+frame_queue = []
+real_time = False
 
-while True:
-    # Read frame from video capture
-    _, frame = cap.read()
+# Wait for Tensorflow to load and clear the console
+print("Waiting for Tensorflow to load")
+time.sleep(1)
+os.system("cls" if os.name == "nt" else "clear")
 
-    # Flip the frame horizontally
-    frame = cv2.flip(frame, 1)
+# Ask user if they want to process in real time
+if input("Process in Real Time? (y/n):").lower() == "y":
+    real_time = True
+    print("Processing in Real Time")
+    # Keyboard controls
+    print("Keyboard Controls:")
+    print("Press 'q' to quit")
+    print("Press 's' to save the canvas")
+    print("Press 'c' to clear the canvas")
+else:
+    print("Processing in Post Processing Mode")
+    print("Press 'q' to stop recording")
 
+
+def process_frame(frame, canvas):
     # Get frame dimensions
     frame_height, frame_width, _ = frame.shape
-
-    # Create a black canvas if not already created
-    if canvas is None:
-        canvas = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
 
     # Convert frame to RGB format
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -60,11 +76,39 @@ while True:
             y = int(index_finger_tip.y * frame_height)
             cv2.circle(canvas, (x, y), 5, (0, 255, 0), -1)
 
-    # Overlay the canvas on the frame
-    frame = cv2.add(frame, canvas)
+    return frame, canvas
+
+
+while True:
+    # Read frame from video capture
+    _, frame = cap.read()
+
+    # Flip the frame horizontally
+    frame = cv2.flip(frame, 1)
+
+    # Get frame dimensions
+    frame_height, frame_width, _ = frame.shape
+
+    # Create a black canvas if not already created
+    if canvas is None:
+        canvas = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
+
+    # Convert frame to RGB format
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    if real_time:
+        # Process the frame for hand detection (only in real-time mode)
+        frame, canvas = process_frame(frame, canvas)
+        # Overlay the canvas on the frame
+        frame = cv2.add(frame, canvas)
+        # Display the canvas
+        cv2.imshow("Canvas", canvas)
+    else:
+        # Save the frame to the queue (only in post-processing mode)
+        frame_queue.append(frame)
+
     # Display the output frame
     cv2.imshow("Output", frame)
-    cv2.imshow("Canvas", canvas)
 
     # Keyboard controls and delay between getting next frame
     key = cv2.waitKey(1)
@@ -74,11 +118,26 @@ while True:
     if key == ord("s"):
         print("Canvas saved as output.png")
         cv2.imwrite("output.png", canvas)
-    if key == ord("c"):
+    if key == ord("c") and real_time:
         print("Canvas cleared")
         canvas = None
 
-# Release video capture and destroy window
+# Release video capture
 cap.release()
-cv2.destroyWindow("Output")
-cv2.destroyWindow("Canvas")
+if not real_time:
+    print("Processing the frames")
+    for frame in frame_queue:
+        frame, canvas = process_frame(frame, canvas)
+        # drawing = cv2.add(frame, canvas)
+        # cv2.imshow("Output", drawing)
+        cv2.imshow("Canvas", canvas)
+        cv2.waitKey(1)
+    # Inform the user and wait
+    print("Processing complete")
+    print("Press any key to exit")
+    cv2.waitKey(0)
+# Save the final canvas
+print("Final Canvas saved as final_output.png")
+cv2.imwrite("final_output.png", canvas)
+# Destroy all windows
+cv2.destroyAllWindows()
