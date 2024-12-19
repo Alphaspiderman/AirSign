@@ -8,12 +8,14 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import cv2
 import mediapipe as mp
 import numpy as np
+from cv2.typing import MatLike
 
 # Ignore warnings
 warnings.filterwarnings("ignore")
 
 # Initialize video capture
 cap = cv2.VideoCapture(0)
+
 
 # Initialize hand detection
 hand_det = mp.solutions.hands.Hands()
@@ -22,8 +24,12 @@ hand_det = mp.solutions.hands.Hands()
 drawing_utils = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
+# Get the first frame to define the canvas dimensions
+_, frame = cap.read()
+frame_height, frame_width, _ = frame.shape
+
 # Define an empty canvas
-canvas = None
+canvas = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
 
 # Control when to process the handtracking
 frame_queue = []
@@ -48,7 +54,7 @@ else:
     print("Press 'q' to stop recording")
 
 
-def process_frame(frame, canvas):
+def process_frame(frame: MatLike, canvas: MatLike):
     # Get frame dimensions
     frame_height, frame_width, _ = frame.shape
 
@@ -86,13 +92,6 @@ while True:
     # Flip the frame horizontally
     frame = cv2.flip(frame, 1)
 
-    # Get frame dimensions
-    frame_height, frame_width, _ = frame.shape
-
-    # Create a black canvas if not already created
-    if canvas is None:
-        canvas = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
-
     # Convert frame to RGB format
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -120,7 +119,7 @@ while True:
         cv2.imwrite("output.png", canvas)
     if key == ord("c") and real_time:
         print("Canvas cleared")
-        canvas = None
+        canvas = np.zeros_like(canvas)
 
 # Release video capture
 cap.release()
