@@ -1,6 +1,7 @@
 import os
 import time
 import warnings
+from datetime import datetime
 
 # Set the environment variable to suppress Tensorflow warnings
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -90,8 +91,10 @@ def handle_keyboard_input(key, canvas, real_time):
         print("Quitting")
         return True
     if key == ord("s"):
-        print("Canvas saved as output.png")
-        cv2.imwrite("output.png", canvas)
+        now = datetime.now()
+        name = f"output_{now.strftime('%Y%m%d_%H%M%S')}.png"
+        print(f"Canvas saved as {name}")
+        cv2.imwrite(f"./output/{name}", canvas)
     if key == ord("c") and real_time:
         print("Canvas cleared")
         canvas = np.zeros_like(canvas)
@@ -150,7 +153,9 @@ if not real_time:
     print("Press any key to exit")
     cv2.waitKey(0)
 # Save the final canvas
-print("Final Canvas saved as final_output.png")
-cv2.imwrite("final_output.png", canvas)
+now = datetime.now()
+name = f"final_output_{now.strftime('%Y%m%d_%H%M%S')}.png"
+print(f"Final Canvas saved as {name}")
+cv2.imwrite(f"./output/{name}", canvas)
 # Destroy all windows
 cv2.destroyAllWindows()
