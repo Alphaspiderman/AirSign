@@ -85,6 +85,19 @@ def process_frame(frame: MatLike, canvas: MatLike):
     return frame, canvas
 
 
+def handle_keyboard_input(key, canvas, real_time):
+    if key == ord("q"):
+        print("Quitting")
+        return True
+    if key == ord("s"):
+        print("Canvas saved as output.png")
+        cv2.imwrite("output.png", canvas)
+    if key == ord("c") and real_time:
+        print("Canvas cleared")
+        canvas = np.zeros_like(canvas)
+    return False
+
+
 while True:
     # Read frame from video capture
     _, frame = cap.read()
@@ -111,26 +124,27 @@ while True:
 
     # Keyboard controls and delay between getting next frame
     key = cv2.waitKey(1)
-    if key == ord("q"):
-        print("Quitting")
+    if handle_keyboard_input(key, canvas, real_time):
         break
-    if key == ord("s"):
-        print("Canvas saved as output.png")
-        cv2.imwrite("output.png", canvas)
-    if key == ord("c") and real_time:
-        print("Canvas cleared")
-        canvas = np.zeros_like(canvas)
 
-# Release video capture
+# Release video capture and destroy all windows
 cap.release()
+cv2.destroyAllWindows()
+
+# If not real-time, process the frames in the queue
 if not real_time:
-    print("Processing the frames")
-    for frame in frame_queue:
-        frame, canvas = process_frame(frame, canvas)
-        # drawing = cv2.add(frame, canvas)
-        # cv2.imshow("Output", drawing)
-        cv2.imshow("Canvas", canvas)
-        cv2.waitKey(1)
+    # Clear the console
+    os.system("cls" if os.name == "nt" else "clear")
+    # Inform the user
+    remaining = len(frame_queue)
+    print(f"Processing the frames ({remaining} frames)")
+    # Process the frames
+    while frame_queue:
+        remaining = len(frame_queue)
+        if remaining % 100 == 0:
+            print(f"Remaining Frames: {remaining}")
+        _, canvas = process_frame(frame_queue.pop(0), canvas)
+    cv2.imshow("Canvas", canvas)
     # Inform the user and wait
     print("Processing complete")
     print("Press any key to exit")
