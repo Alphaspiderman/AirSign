@@ -10,16 +10,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from cv2.typing import MatLike
+import tkinter as tk
+from tkinter import simpledialog
 
 # Ignore warnings
 warnings.filterwarnings("ignore")
 
 # Initialize video capture
 cap = cv2.VideoCapture(0)
-
-
-# Initialize hand detection
-hand_det = mp.solutions.hands.Hands()
 
 # Initialize drawing utilities
 drawing_utils = mp.solutions.drawing_utils
@@ -47,15 +45,23 @@ if input("Process in Real Time? (y/n):").lower() == "y":
     print("Processing in Real Time")
     # Keyboard controls
     print("Keyboard Controls:")
-    print("Press 'q' to quit")
-    print("Press 's' to save the canvas")
-    print("Press 'c' to clear the canvas")
+    print("Press 'q' to Quit")
+    print("Press 's' to save current Canvas")
+    print("Press 'n' to save new Signature")
+    print("Press 'c' to clear current Canvas")
 else:
     print("Processing in Post Processing Mode")
     print("Press 'q' to stop recording")
 
+# Initialize hand detection
+hand_det = mp.solutions.hands.Hands()
+
+# Store the previous position of the index finger (initialize as None)
+prev_x, prev_y = None, None
 
 def process_frame(frame: MatLike, canvas: MatLike):
+    global prev_x, prev_y  # Keep track of previous index finger position
+
     # Get frame dimensions
     frame_height, frame_width, _ = frame.shape
 
@@ -67,7 +73,6 @@ def process_frame(frame: MatLike, canvas: MatLike):
     hands = op.multi_hand_landmarks
 
     if hands:
-        # Loop through detected hands
         for hand in hands:
             # Draw landmarks and connections on the frame
             drawing_utils.draw_landmarks(
@@ -77,33 +82,65 @@ def process_frame(frame: MatLike, canvas: MatLike):
                 mp_drawing_styles.get_default_hand_landmarks_style(),
                 mp_drawing_styles.get_default_hand_connections_style(),
             )
-            # Draw the index finger tip on the canvas
+
+            # Get index finger tip coordinates
             index_finger_tip = hand.landmark[8]
             x = int(index_finger_tip.x * frame_width)
             y = int(index_finger_tip.y * frame_height)
-            cv2.circle(canvas, (x, y), 5, (0, 255, 0), -1)
+
+            # Draw continuous line if previous position exists
+            if prev_x is not None and prev_y is not None:
+                cv2.line(canvas, (prev_x, prev_y), (x, y), (0, 255, 0), 5)
+
+            # Update previous position
+            prev_x, prev_y = x, y
+    else:
+        # Reset previous position if no hand is detected
+        prev_x, prev_y = None, None
 
     return frame, canvas
-
 
 def handle_keyboard_input(key, canvas, real_time):
     if key == ord("q"):
         print("Quitting")
-        return True
+        return True, canvas  # Ensure canvas is returned
+
     if key == ord("s"):
         now = datetime.now()
-        name = f"output_{now.strftime('%Y%m%d_%H%M%S')}.png"
+        name = f"output_{now.strftime('%b-%d-%Y_%I-%M-%p')}.png"
+        os.makedirs("./output", exist_ok=True)  # Ensure directory exists
         print(f"Canvas saved as {name}")
         cv2.imwrite(f"./output/{name}", canvas)
+
+    if key == ord("n"):
+        # Open a Tkinter window to get the username
+        root = tk.Tk()
+        root.withdraw()  # Hide the root window
+        user_name = simpledialog.askstring("Save Signature", "Enter your name:")
+
+        if user_name:
+            user_name = user_name.strip().replace(" ", "_")  # Remove spaces for filename safety
+            signature_path = f"./signatures/{user_name}_signature.png"
+            os.makedirs("./signatures", exist_ok=True)  # Ensure folder exists
+            print(f"Signature saved as {signature_path}")
+            cv2.imwrite(signature_path, canvas)
+
     if key == ord("c") and real_time:
         print("Canvas cleared")
-        canvas = np.zeros_like(canvas)
-    return False
+        canvas[:] = 0  # Properly clear the canvas instead of reassigning
+
+    return False, canvas
 
 
 while True:
     # Read frame from video capture
-    _, frame = cap.read()
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Could not read frame from webcam.")
+        cap.release()
+        cv2.destroyAllWindows()
+        exit()
 
     # Flip the frame horizontally
     frame = cv2.flip(frame, 1)
@@ -127,7 +164,8 @@ while True:
 
     # Keyboard controls and delay between getting next frame
     key = cv2.waitKey(1)
-    if handle_keyboard_input(key, canvas, real_time):
+    quit_flag, canvas = handle_keyboard_input(key, canvas, real_time)
+    if quit_flag:
         break
 
 # Release video capture and destroy all windows
@@ -138,9 +176,11 @@ cv2.destroyAllWindows()
 if not real_time:
     # Clear the console
     os.system("cls" if os.name == "nt" else "clear")
+    
     # Inform the user
     remaining = len(frame_queue)
     print(f"Processing the frames ({remaining} frames)")
+    
     # Process the frames
     while frame_queue:
         remaining = len(frame_queue)
@@ -148,14 +188,19 @@ if not real_time:
             print(f"Remaining Frames: {remaining}")
         _, canvas = process_frame(frame_queue.pop(0), canvas)
     cv2.imshow("Canvas", canvas)
+    
     # Inform the user and wait
     print("Processing complete")
     print("Press any key to exit")
     cv2.waitKey(0)
+
+os.makedirs("./output", exist_ok=True)
+
 # Save the final canvas
 now = datetime.now()
-name = f"final_output_{now.strftime('%Y%m%d_%H%M%S')}.png"
+name = f"final_output_{now.strftime('%b-%d-%Y_%I-%M-%p')}.png"
 print(f"Final Canvas saved as {name}")
 cv2.imwrite(f"./output/{name}", canvas)
+
 # Destroy all windows
 cv2.destroyAllWindows()
