@@ -119,11 +119,16 @@ def handle_keyboard_input(key, canvas, real_time):
         user_name = simpledialog.askstring("Save Signature", "Enter your name:")
 
         if user_name:
-            user_name = user_name.strip().replace(" ", "_")  # Remove spaces for filename safety
-            signature_path = f"./signatures/{user_name}_signature.png"
-            os.makedirs("./signatures", exist_ok=True)  # Ensure folder exists
+            user_name = user_name.strip().replace(" ", "_")  # Remove spaces for folder name safety
+            now = datetime.now()
+            timestamp = now.isoformat().replace(":", "-").replace(".", "-")
+            signature_folder = f"./signatures/{user_name}"
+            os.makedirs(signature_folder, exist_ok=True)  # Ensure folder exists
+            signature_path = f"{signature_folder}/signature_{timestamp}.png"
             print(f"Signature saved as {signature_path}")
             cv2.imwrite(signature_path, canvas)
+            # Clear the canvas
+            canvas[:] = 0
 
     if key == ord("c") and real_time:
         print("Canvas cleared")
@@ -198,7 +203,7 @@ os.makedirs("./output", exist_ok=True)
 
 # Save the final canvas
 now = datetime.now()
-name = f"final_output_{now.strftime('%b-%d-%Y_%I-%M-%p')}.png"
+name = f"final_output_{now.isoformat().replace(':', '-').replace('.', '-')}.png"
 print(f"Final Canvas saved as {name}")
 cv2.imwrite(f"./output/{name}", canvas)
 
