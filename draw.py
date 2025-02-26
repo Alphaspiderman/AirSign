@@ -54,10 +54,21 @@ else:
     print("Press 'q' to stop recording")
 
 # Initialize hand detection
-hand_det = mp.solutions.hands.Hands()
+hand_det = mp.solutions.hands.Hands(
+    static_image_mode=False,  # Set to True if hand isn't moving much
+    max_num_hands=1,  # Reduce to 1 hand to prevent false detections
+    min_detection_confidence=0.8,  # Increase threshold to detect hand more confidently
+    min_tracking_confidence=0.8,  # Ensure stable tracking
+)
 
 # Store the previous position of the index finger (initialize as None)
 prev_x, prev_y = None, None
+
+# Define Region of Interest (ROI)
+ROI_TOP = 100
+ROI_BOTTOM = 400
+ROI_LEFT = 150
+ROI_RIGHT = 500
 
 def process_frame(frame: MatLike, canvas: MatLike):
     global prev_x, prev_y  # Keep track of previous index finger position
@@ -88,12 +99,14 @@ def process_frame(frame: MatLike, canvas: MatLike):
             x = int(index_finger_tip.x * frame_width)
             y = int(index_finger_tip.y * frame_height)
 
-            # Draw continuous line if previous position exists
-            if prev_x is not None and prev_y is not None:
-                cv2.line(canvas, (prev_x, prev_y), (x, y), (0, 255, 0), 5)
+            # Only consider points inside the ROI
+            if ROI_LEFT < x < ROI_RIGHT and ROI_TOP < y < ROI_BOTTOM:
+                if prev_x is not None and prev_y is not None:
+                    cv2.line(canvas, (prev_x, prev_y), (x, y), (0, 255, 0), 5)
 
-            # Update previous position
-            prev_x, prev_y = x, y
+                prev_x, prev_y = x, y
+            else:
+                prev_x, prev_y = None, None  # Reset if outside the ROI
     else:
         # Reset previous position if no hand is detected
         prev_x, prev_y = None, None
@@ -107,7 +120,7 @@ def handle_keyboard_input(key, canvas, real_time):
 
     if key == ord("s"):
         now = datetime.now()
-        name = f"output_{now.strftime('%b-%d-%Y_%I-%M-%p')}.png"
+        name = f"output_{now.strftime('%Y-%m-%d_%H-%M-%S')}.png"
         os.makedirs("./output", exist_ok=True)  # Ensure directory exists
         print(f"Canvas saved as {name}")
         cv2.imwrite(f"./output/{name}", canvas)
@@ -121,10 +134,9 @@ def handle_keyboard_input(key, canvas, real_time):
         if user_name:
             user_name = user_name.strip().replace(" ", "_")  # Remove spaces for folder name safety
             now = datetime.now()
-            timestamp = now.isoformat().replace(":", "-").replace(".", "-")
             signature_folder = f"./signatures/{user_name}"
             os.makedirs(signature_folder, exist_ok=True)  # Ensure folder exists
-            signature_path = f"{signature_folder}/signature_{timestamp}.png"
+            signature_path = f"{signature_folder}/signature_{now.strftime('%Y-%m-%d_%H-%M-%S')}.png"
             print(f"Signature saved as {signature_path}")
             cv2.imwrite(signature_path, canvas)
             # Clear the canvas
@@ -163,6 +175,8 @@ while True:
     else:
         # Save the frame to the queue (only in post-processing mode)
         frame_queue.append(frame)
+
+    cv2.rectangle(frame, (ROI_LEFT, ROI_TOP), (ROI_RIGHT, ROI_BOTTOM), (255, 0, 0), 2)
 
     # Display the output frame
     cv2.imshow("Output", frame)
