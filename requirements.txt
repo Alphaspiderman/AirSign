@@ -1,4 +1,6 @@
-mediapipe
 opencv-python
 numpy
-tkinter
+Pillow
+scikit-learn
+scikit-image
+mediapipe
