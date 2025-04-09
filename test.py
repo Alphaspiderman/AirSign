@@ -100,7 +100,7 @@ def capture_signature(username):
             print(f"Collected 5 signatures for {username}.")
             break
 
-    cap.release()
+    #cap.release()
     cv2.destroyAllWindows()
 
 # Feature extractor
@@ -115,11 +115,6 @@ def authenticate(user):
     count = 0
     canvas = np.zeros((480, 640, 3), dtype=np.uint8)
     prev_x, prev_y = None, None
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        messagebox.showerror("Error", "Cannot access webcam.")
-        return
 
     while True:
         ret, frame = cap.read()
@@ -161,14 +156,13 @@ def authenticate(user):
         if key == ord('s'):
             break
         elif key == ord('q'):
-            cap.release()
+            # cap.release()
             cv2.destroyWindow("Login")
             return
-        elif key == ord('c'):
+        if key == ord('c'):
             print("Canvas cleared")
             canvas[:] = 0
 
-    cap.release()
     cv2.destroyWindow("Login")
 
     login_features = extract_features(canvas)
@@ -183,7 +177,7 @@ def authenticate(user):
     avg_score = np.mean(scores)
     print(f"Avg similarity: {avg_score:.3f}")
 
-    if avg_score > 0.8:
+    if avg_score > 0.5:
         messagebox.showinfo("Login Success", f"{user} logged in successfully!")
     else:
         messagebox.showerror("Login Failed", "Signature did not match.")
@@ -216,8 +210,7 @@ def login_user():
 
     def proceed():
         win.destroy()
-        messagebox.showinfo("Login Attempted", f"{selected_user.get()} trying to login")
-        #authenticate(selected_user.get())
+        authenticate(selected_user.get())
 
     tk.Button(win, text="Login", command=proceed).pack(pady=10)
 
