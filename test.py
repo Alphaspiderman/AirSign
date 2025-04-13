@@ -24,6 +24,8 @@ canvas = np.zeros((480, 640, 3), dtype=np.uint8)
 # Mouse drawing function for login
 drawing = False
 last_x, last_y = -1, -1
+
+
 def draw(event, x, y, flags, param):
     global drawing, last_x, last_y, canvas
 
@@ -39,6 +41,8 @@ def draw(event, x, y, flags, param):
         cv2.line(canvas, (last_x, last_y), (x, y), (0, 255, 0), 4)
 
 # Save signature
+
+
 def save_signature(canvas, username, count):
     folder = os.path.join("signatures", username)
     os.makedirs(folder, exist_ok=True)
@@ -46,6 +50,8 @@ def save_signature(canvas, username, count):
     cv2.imwrite(filename, canvas)
 
 # Signature registration using hand gesture
+
+
 def capture_signature(username):
     count = 0
     canvas = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -72,7 +78,8 @@ def capture_signature(username):
 
                 if 150 < x < 500 and 100 < y < 400:
                     if prev_x is not None and prev_y is not None:
-                        cv2.line(canvas, (prev_x, prev_y), (x, y), (0, 255, 0), 4)
+                        cv2.line(canvas, (prev_x, prev_y),
+                                 (x, y), (0, 255, 0), 4)
                     prev_x, prev_y = x, y
                 else:
                     prev_x, prev_y = None, None
@@ -92,7 +99,7 @@ def capture_signature(username):
             canvas[:] = 0
         elif key == ord('q'):
             break
-        
+
         if key == ord("c"):
             print("Canvas cleared")
             canvas[:] = 0  # Properly clear the canvas instead of reassigning
@@ -100,17 +107,22 @@ def capture_signature(username):
             print(f"Collected 5 signatures for {username}.")
             break
 
-    #cap.release()
+    # cap.release()
     cv2.destroyAllWindows()
 
 # Feature extractor
+
+
 def extract_features(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = cv2.resize(image, (128, 128))
-    features, _ = hog(image, pixels_per_cell=(16, 16), cells_per_block=(2, 2), visualize=True)
+    features, _ = hog(image, pixels_per_cell=(16, 16),
+                      cells_per_block=(2, 2), visualize=True)
     return features
 
 # Authentication
+
+
 def authenticate(user):
     count = 0
     canvas = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -137,7 +149,8 @@ def authenticate(user):
 
                 if 150 < x < 500 and 100 < y < 400:
                     if prev_x is not None and prev_y is not None:
-                        cv2.line(canvas, (prev_x, prev_y), (x, y), (0, 255, 0), 4)
+                        cv2.line(canvas, (prev_x, prev_y),
+                                 (x, y), (0, 255, 0), 4)
                     prev_x, prev_y = x, y
                 else:
                     prev_x, prev_y = None, None
@@ -183,18 +196,22 @@ def authenticate(user):
         messagebox.showerror("Login Failed", "Signature did not match.")
 
 # GUI Handlers
+
+
 def register_user():
     name = simpledialog.askstring("Register", "Enter your name:")
     if name:
         name = name.strip().replace(" ", "_")
         capture_signature(name)
 
+
 def login_user():
     if not os.path.exists("signatures"):
         messagebox.showerror("Error", "No registered users found.")
         return
 
-    users = [u for u in os.listdir("signatures") if os.path.isdir(f"signatures/{u}")]
+    users = [u for u in os.listdir(
+        "signatures") if os.path.isdir(f"signatures/{u}")]
     if not users:
         messagebox.showerror("Error", "No registered users found.")
         return
@@ -214,10 +231,12 @@ def login_user():
 
     tk.Button(win, text="Login", command=proceed).pack(pady=10)
 
+
 def quit_app():
     root.destroy()
 
-#Initialise Camera
+
+# Initialise Camera
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("Error: Cannot open webcam.")
@@ -228,9 +247,13 @@ root = tk.Tk()
 root.title("AirSign")
 root.geometry("400x300")
 
-tk.Label(root, text="AirSign\nSignature Authentication System", font=("Helvetica", 16)).pack(pady=20)
-tk.Button(root, text="Register", command=register_user, width=20, height=2).pack(pady=10)
-tk.Button(root, text="Login", command=login_user, width=20, height=2).pack(pady=10)
-tk.Button(root, text="Quit", command=quit_app, width=20, height=2, bg="red", fg="white").pack(pady=20)
+tk.Label(root, text="AirSign\nSignature Authentication System",
+         font=("Helvetica", 16)).pack(pady=20)
+tk.Button(root, text="Register", command=register_user,
+          width=20, height=2).pack(pady=10)
+tk.Button(root, text="Login", command=login_user,
+          width=20, height=2).pack(pady=10)
+tk.Button(root, text="Quit", command=quit_app, width=20,
+          height=2, bg="red", fg="white").pack(pady=20)
 
 root.mainloop()
