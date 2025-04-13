@@ -44,7 +44,7 @@ def calculate_cosine_similarity_for_folder(test_data_folder):
             user = label_map[most_similar_label]
 
             print(
-                f"Test Image: {img_name} | Most similar signature is from user: {user} with similarity score: {similarities[0][most_similar_index]:.4f}")
+                f"Test Image: {img_name} | Most similar signature is from user: {user} with similarity score (using Cosine Similarity): {similarities[0][most_similar_index]:.4f}")
 
 
 test_data_folder = 'test_data'
