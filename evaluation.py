@@ -1,8 +1,6 @@
 import os
 import numpy as np
 import cv2
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import preprocess_input
 from sklearn.metrics.pairwise import cosine_similarity
 from feature_extraction import build_feature_extractor
@@ -27,18 +25,16 @@ def evaluate_signature(image, username):
     if not os.path.exists(user_folder):
         print(f"No features found for user: {username}")
         return 0.0
-    
+
     features_path = os.path.join(user_folder, "signature_features.npy")
 
     user_features = np.load(features_path)
     if user_features.size == 0:
         print(f"No feature vectors available for user: {username}")
         return None, 0.0
-    
+
     image_features = extract_features(image)
 
     similarities = cosine_similarity([image_features], user_features)
 
     return similarities
-
-

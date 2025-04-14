@@ -6,6 +6,7 @@ from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D
 
+
 # Build feature extraction model
 def build_feature_extractor():
     base_model = VGG16(weights="imagenet", include_top=False, input_shape=(128, 128, 3))
@@ -48,7 +49,8 @@ def extract_features(model, x):
     features = features.reshape(features.shape[0], -1)
     return features
 
-#Save Features
+
+# Save Features
 def save_features(username):
     x, y = load_data(username)
 

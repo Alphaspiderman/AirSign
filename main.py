@@ -2,12 +2,8 @@ import cv2
 import numpy as np
 import os
 import tkinter as tk
-from tkinter import simpledialog, messagebox
-from PIL import Image, ImageTk
-from sklearn.metrics.pairwise import cosine_similarity
-from skimage.feature import hog
-import glob
 import mediapipe as mp
+from tkinter import simpledialog, messagebox
 from feature_extraction import save_features
 from evaluation import evaluate_signature
 
@@ -18,10 +14,11 @@ hand_detector = mp_hands.Hands(
     max_num_hands=1,  # Reduce to 1 hand to prevent false detections
     min_detection_confidence=0.8,  # Increase threshold to detect hand more confidently
     min_tracking_confidence=0.8,  # Ensure stable tracking
-) 
+)
 
 # Global canvas for login
 canvas = np.zeros((480, 640, 3), dtype=np.uint8)
+
 
 # Save signature
 def save_signature(canvas, username, count):
@@ -71,14 +68,14 @@ def capture_signature(username):
         cv2.imshow("Register", output)
 
         key = cv2.waitKey(1)
-        if key == ord('s'):
+        if key == ord("s"):
             save_signature(canvas, username, count + 1)
             print(f"Saved signature {count + 1}")
             count += 1
             canvas[:] = 0
-        elif key == ord('q'):
+        elif key == ord("q"):
             break
-        
+
         if key == ord("c"):
             print("Canvas cleared")
             canvas[:] = 0  # Properly clear the canvas instead of reassigning
@@ -87,17 +84,7 @@ def capture_signature(username):
             save_features(username)
             break
 
-    #cap.release()
     cv2.destroyAllWindows()
-
-# Feature extractor
-def extract_features(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image = cv2.resize(image, (128, 128))
-    features, _ = hog(
-        image, pixels_per_cell=(16, 16), cells_per_block=(2, 2), visualize=True
-    )
-    return features
 
 
 # Authentication
@@ -136,19 +123,25 @@ def authenticate(user):
         # Draw ROI box
         cv2.rectangle(frame, (150, 100), (500, 400), (255, 0, 0), 2)
         output = cv2.add(frame, canvas)
-        cv2.putText(output, "Draw and press 's' to submit or 'c' to clear", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(
+            output,
+            "Draw and press 's' to submit or 'c' to clear",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+        )
 
         cv2.imshow("Login", output)
 
         key = cv2.waitKey(1)
-        if key == ord('s'):
+        if key == ord("s"):
             break
-        elif key == ord('q'):
-            # cap.release()
+        elif key == ord("q"):
             cv2.destroyWindow("Login")
             return
-        if key == ord('c'):
+        if key == ord("c"):
             print("Canvas cleared")
             canvas[:] = 0
 
@@ -157,7 +150,7 @@ def authenticate(user):
     # Evaluate signature
     similarities = evaluate_signature(canvas, user)
     similarity_score = np.max(similarities)
-    
+
     if similarity_score > 0.98:
         print(f"similarity_score: {similarity_score}")
         messagebox.showinfo("Login Success", f"{user} logged in successfully!")
