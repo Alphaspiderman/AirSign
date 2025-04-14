@@ -9,7 +9,7 @@ from skimage.feature import hog
 import glob
 import mediapipe as mp
 from feature_extraction import save_features
-#from evaluation import evaluate_signature
+from evaluation import evaluate_signature
 
 # Mediapipe hand detection setup
 mp_hands = mp.solutions.hands
@@ -102,7 +102,6 @@ def extract_features(image):
 
 # Authentication
 def authenticate(user):
-    count = 0
     canvas = np.zeros((480, 640, 3), dtype=np.uint8)
     prev_x, prev_y = None, None
 
@@ -156,12 +155,15 @@ def authenticate(user):
     cv2.destroyWindow("Login")
 
     # Evaluate signature
-    #matched_user, avg_score = evaluate_signature(canvas, user)
-
-    #if avg_score > 0.5:
-        #messagebox.showinfo("Login Success", f"{user} logged in successfully!")
-    #else:
-       # messagebox.showerror("Login Failed", "Signature did not match.")
+    similarities = evaluate_signature(canvas, user)
+    similarity_score = np.max(similarities)
+    
+    if similarity_score > 0.98:
+        print(f"similarity_score: {similarity_score}")
+        messagebox.showinfo("Login Success", f"{user} logged in successfully!")
+    else:
+        print(f"similarity_score: {similarity_score}")
+        messagebox.showerror("Login Failed", "Signature did not match.")
 
 
 # GUI Handlers
