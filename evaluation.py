@@ -15,7 +15,9 @@ def extract_features(img):
     img = preprocess_input(img)
     img = np.expand_dims(img, axis=0)
     features = feature_extractor.predict(img)
-    return features.flatten()
+    features = features.reshape(features.shape[0], -1)
+    print(features.shape)
+    return features
 
 
 # Function to calculate cosine similarity
@@ -31,10 +33,10 @@ def evaluate_signature(image, username):
     user_features = np.load(features_path)
     if user_features.size == 0:
         print(f"No feature vectors available for user: {username}")
-        return None, 0.0
+        return 0.0
 
     image_features = extract_features(image)
 
-    similarities = cosine_similarity([image_features], user_features)
+    similarities = cosine_similarity(image_features, user_features)
 
-    return similarities
+    return similarities[0][0]

@@ -148,10 +148,10 @@ def authenticate(user):
     cv2.destroyWindow("Login")
 
     # Evaluate signature
-    similarities = evaluate_signature(canvas, user)
-    similarity_score = np.max(similarities)
+    similarity_score = evaluate_signature(canvas, user)
+    #similarity_score = np.max(similarities)
 
-    if similarity_score > 0.98:
+    if similarity_score > 0.95:
         print(f"similarity_score: {similarity_score}")
         messagebox.showinfo("Login Success", f"{user} logged in successfully!")
     else:

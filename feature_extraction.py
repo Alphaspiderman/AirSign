@@ -2,14 +2,14 @@ import cv2
 import os
 import glob
 import numpy as np
-from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D
-
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input
 
 # Build feature extraction model
 def build_feature_extractor():
-    base_model = VGG16(weights="imagenet", include_top=False, input_shape=(128, 128, 3))
+    base_model = ResNet50(weights="imagenet", include_top=False, input_shape=(128, 128, 3))
 
     base_model.trainable = False
 
@@ -57,7 +57,7 @@ def save_features(username):
     feature_extractor = build_feature_extractor()
 
     features = extract_features(feature_extractor, x)
-
+    combined_feature = np.mean(features, axis=0).reshape(1, -1)
     # Create the features directory if it doesn't exist
     features_folder = "features"
     os.makedirs(features_folder, exist_ok=True)
@@ -67,8 +67,6 @@ def save_features(username):
     os.makedirs(user_folder, exist_ok=True)
 
     # Save the features and labels in the user-specific folder
-    np.save(os.path.join(user_folder, "signature_features.npy"), features)
-    np.save(os.path.join(user_folder, "signature_labels.npy"), y)
+    np.save(os.path.join(user_folder, "signature_features.npy"), combined_feature)
 
-    print(f"Extracted features shape: {features.shape}")
-    print(f"Saved features and labels to {user_folder}.")
+    print(f"Extracted features shape: {combined_feature.shape}")
